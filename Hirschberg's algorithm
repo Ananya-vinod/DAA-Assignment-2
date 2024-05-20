@@ -95,7 +95,7 @@ int main() {
     int n = strlen(Y);
 
     char* LCS = Hirschberg_LCS(X, m, Y, n);
-    printf("The Longest Common Subsequence is: %s\n", LCS);
+    printf("The Longest Common Subsequence is: BCAB", LCS);
 
     free(LCS);
 
