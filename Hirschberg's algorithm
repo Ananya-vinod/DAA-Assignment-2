@@ -1,36 +1,104 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-
-int max(int a, int b) {
-    return (a > b) ? a : b;
-}
-
-int lcs(char *X, char *Y, int m, int n) {
-    int LCS[m + 1][n + 1];
+// Function to compute the length of LCS
+int* LCS_Length(char* X, char* Y, int m, int n) {
+    int i, j;
+    int* curr = (int*)malloc((n+1) * sizeof(int));
+    int* prev = (int*)malloc((n+1) * sizeof(int));
     
-    for (int i = 0; i <= m; i++) {
-        for (int j = 0; j <= n; j++) {
-            if (i == 0 || j == 0)
-                LCS[i][j] = 0;
-            else if (X[i - 1] == Y[j - 1])
-                LCS[i][j] = 1 + LCS[i - 1][j - 1];
-            else
-                LCS[i][j] = max(LCS[i - 1][j], LCS[i][j - 1]);
-        }
+    for (j = 0; j <= n; j++) {
+        prev[j] = 0;
     }
     
-    return LCS[m][n];
+    for (i = 1; i <= m; i++) {
+        for (j = 0; j <= n; j++) {
+            curr[j] = prev[j];
+        }
+        for (j = 1; j <= n; j++) {
+            if (X[i-1] == Y[j-1]) {
+                curr[j] = prev[j-1] + 1;
+            } else {
+                curr[j] = curr[j-1] > prev[j] ? curr[j-1] : prev[j];
+            }
+        }
+        int* temp = prev;
+        prev = curr;
+        curr = temp;
+    }
+    free(curr);
+    return prev;
+}
+
+// Function to find the LCS using Hirschberg's algorithm
+void Hirschberg(char* X, char* Y, int m, int n, char* result) {
+    if (n == 0) {
+        result[0] = '\0';
+    } else if (m == 1) {
+        int found = 0;
+        for (int j = 0; j < n; j++) {
+            if (X[0] == Y[j]) {
+                result[0] = X[0];
+                result[1] = '\0';
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            result[0] = '\0';
+        }
+    } else {
+        int i = m / 2;
+        int* L1 = LCS_Length(X, Y, i, n);
+        int* L2 = LCS_Length(strrev(X + i), strrev(Y), m - i, n);
+        int k = 0;
+        int max_len = 0;
+        for (int j = 0; j <= n; j++) {
+            if (L1[j] + L2[n - j] > max_len) {
+                max_len = L1[j] + L2[n - j];
+                k = j;
+            }
+        }
+        free(L1);
+        free(L2);
+        
+        char* left = (char*)malloc((i + 1) * sizeof(char));
+        char* right = (char*)malloc((m - i + 1) * sizeof(char));
+        
+        Hirschberg(X, Y, i, k, left);
+        Hirschberg(X + i, Y + k, m - i, n - k, right);
+        
+        strcpy(result, left);
+        strcat(result, right);
+        
+        free(left);
+        free(right);
+    }
+}
+
+// Helper function to reverse a string
+char* strrev(char* str) {
+    int len = strlen(str);
+    for (int i = 0; i < len / 2; i++) {
+        char temp = str[i];
+        str[i] = str[len - i - 1];
+        str[len - i - 1] = temp;
+    }
+    return str;
 }
 
 int main() {
-    char X[] = "AGGTAB";
-    char Y[] = "GXTXAYB";
+    char X[] = "AGTACGCA";
+    char Y[] = "TATGC";
     int m = strlen(X);
     int n = strlen(Y);
+    char* result = (char*)malloc((m + n + 1) * sizeof(char));
     
-    printf("Length of LCS is %d\n", lcs(X, Y, m, n));
+    Hirschberg(X, Y, m, n, result);
     
+    printf("LCS: %s\n", result);
+    
+    free(result);
     return 0;
 }
